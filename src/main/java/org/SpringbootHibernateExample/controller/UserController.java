@@ -4,7 +4,10 @@ import org.SpringbootHibernateExample.model.User;
 import org.SpringbootHibernateExample.model.UserDao;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,10 +29,13 @@ public class UserController {
      * @return A list of user from the databases
      */
     @RequestMapping(value = "/users",method = RequestMethod.GET)
-    public List<User> findAllUser() {
+    public ResponseEntity<List<User>> findAllUser() {
         List<User> list = null;
         list = userDao.findAll();
-        return list;
+        if(list == null) {
+            return new ResponseEntity<List<User>>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        return new ResponseEntity<List<User>>(list,HttpStatus.OK);
     }
 
     /**
@@ -40,15 +46,13 @@ public class UserController {
     @RequestMapping(value="/create",
             method= RequestMethod.POST,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String create(@RequestBody User requestUser) {
+    public ResponseEntity<String> create(@RequestBody User requestUser) {
         User user = null;
-        try {
-            user = userDao.save(requestUser);
+        user = userDao.save(requestUser);
+        if(user == null) {
+            return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        catch (Exception ex) {
-            return "Error creating the user: " + ex.toString();
-        }
-        return "User succesfully created! (id = " + user.getId() + ")";
+        return new ResponseEntity<String>("User succesfully created! (id = " + user.getId() + ")",HttpStatus.OK);
     }
 
     /**
@@ -59,15 +63,10 @@ public class UserController {
      */
     @RequestMapping(value = "/delete/{id}",
                     method = RequestMethod.DELETE)
-    public String delete(@PathVariable("id") long id) {
-        try {
-            User user = new User(id);
-            userDao.delete(user);
-        }
-        catch (Exception ex) {
-            return "Error deleting the user: " + ex.toString();
-        }
-        return "User succesfully deleted!";
+    public HttpEntity<String> delete(@PathVariable("id") long id) {
+        User user = new User(id);
+        userDao.delete(user);
+        return new ResponseEntity<String>(HttpStatus.NO_CONTENT);
     }
 
     /**
@@ -78,16 +77,15 @@ public class UserController {
      */
     @RequestMapping(value = "/get-by-email/{email:.+}",
                     method = RequestMethod.GET)
-    public String getByEmail(@PathVariable("email") String email) {
+    public ResponseEntity<String> getByEmail(@PathVariable("email") String email) {
         String userId;
-        try {
+
             User user = userDao.findByEmail(email);
             userId = String.valueOf(user.getId());
+        if(userId == null) {
+            return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
         }
-        catch (Exception ex) {
-            return "User not found";
-        }
-        return "The user id is: " + userId;
+        return new ResponseEntity<String>("The user id is: " + userId,HttpStatus.OK);
     }
 
     /**
@@ -99,17 +97,14 @@ public class UserController {
     @RequestMapping(value = "/update",
             method = RequestMethod.PUT,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public String updateUser(@RequestBody User requestUser) {
-        try {
+    public ResponseEntity<String> updateUser(@RequestBody User requestUser) {
+
             User user = userDao.findOne(requestUser.getId());
             user.setEmail(requestUser.getEmail());
             user.setName(requestUser.getName());
             userDao.save(user);
-        }
-        catch (Exception ex) {
-            return "Error updating the user: " + ex.toString();
-        }
-        return "User succesfully updated!";
+
+        return new ResponseEntity<String>("User succesfully updated!",HttpStatus.ACCEPTED);
     }
 
     // ------------------------
