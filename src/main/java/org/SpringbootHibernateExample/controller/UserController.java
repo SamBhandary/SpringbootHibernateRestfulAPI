@@ -1,5 +1,6 @@
 package org.SpringbootHibernateExample.controller;
 
+import org.SpringbootHibernateExample.Utils.UserException;
 import org.SpringbootHibernateExample.model.User;
 import org.SpringbootHibernateExample.model.UserDao;
 
@@ -29,7 +30,7 @@ public class UserController {
      * @return A list of user from the databases
      */
     @RequestMapping(value = "/users",method = RequestMethod.GET)
-    public ResponseEntity<List<User>> findAllUser() {
+    public ResponseEntity<List<User>> findAllUser() throws UserException{
         List<User> list = null;
         list = userDao.findAll();
         if(list == null) {
@@ -43,16 +44,13 @@ public class UserController {
      *
      * @return A string describing if the user is succesfully created or not.
      */
-    @RequestMapping(value="/create",
-            method= RequestMethod.POST,
+    @RequestMapping(value = "/create",
+            method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> create(@RequestBody User requestUser) {
+    public ResponseEntity<String> create(@RequestBody User requestUser) throws UserException {
         User user = null;
         user = userDao.save(requestUser);
-        if(user == null) {
-            return new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        return new ResponseEntity<String>("User succesfully created! (id = " + user.getId() + ")",HttpStatus.OK);
+        return new ResponseEntity<String>("User succesfully created! (id = " + user.getId() + ")", HttpStatus.OK);
     }
 
     /**
@@ -62,8 +60,8 @@ public class UserController {
      * @return A string describing if the user is succesfully deleted or not.
      */
     @RequestMapping(value = "/delete/{id}",
-                    method = RequestMethod.DELETE)
-    public HttpEntity<String> delete(@PathVariable("id") long id) {
+            method = RequestMethod.DELETE)
+    public HttpEntity<String> delete(@PathVariable("id") long id) throws UserException {
         User user = new User(id);
         userDao.delete(user);
         return new ResponseEntity<String>(HttpStatus.NO_CONTENT);
@@ -76,16 +74,12 @@ public class UserController {
      * @return The user id or a message error if the user is not found.
      */
     @RequestMapping(value = "/get-by-email/{email:.+}",
-                    method = RequestMethod.GET)
-    public ResponseEntity<String> getByEmail(@PathVariable("email") String email) {
+            method = RequestMethod.GET)
+    public ResponseEntity<String> getByEmail(@PathVariable("email") String email) throws UserException {
         String userId;
-
-            User user = userDao.findByEmail(email);
-            userId = String.valueOf(user.getId());
-        if(userId == null) {
-            return new ResponseEntity<String>(HttpStatus.NOT_FOUND);
-        }
-        return new ResponseEntity<String>("The user id is: " + userId,HttpStatus.OK);
+        User user = userDao.findByEmail(email);
+        userId = String.valueOf(user.getId());
+        return new ResponseEntity<String>("The user id is: " + userId, HttpStatus.OK);
     }
 
     /**
@@ -97,14 +91,12 @@ public class UserController {
     @RequestMapping(value = "/update",
             method = RequestMethod.PUT,
             consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> updateUser(@RequestBody User requestUser) {
-
-            User user = userDao.findOne(requestUser.getId());
-            user.setEmail(requestUser.getEmail());
-            user.setName(requestUser.getName());
-            userDao.save(user);
-
-        return new ResponseEntity<String>("User succesfully updated!",HttpStatus.ACCEPTED);
+    public ResponseEntity<String> updateUser(@RequestBody User requestUser) throws UserException {
+        User user = userDao.findOne(requestUser.getId());
+        user.setEmail(requestUser.getEmail());
+        user.setName(requestUser.getName());
+        userDao.save(user);
+        return new ResponseEntity<String>("User succesfully updated!", HttpStatus.ACCEPTED);
     }
 
     // ------------------------
